@@ -1,6 +1,7 @@
 # 大数据之路
 ## 编程语言
 ### Java
+- [java虚拟机](./java/JVM虚拟机.md) 
 ### Scala
 
 ## 数据结构
@@ -22,6 +23,9 @@
 ### Hadoop
 ### Spark
 ### Flink
+
+- [flink入门实践](./bigdata/flink入门实践.md)
+
 ### Kafka
 ### Flume
 ### Hive
