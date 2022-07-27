@@ -27,7 +27,7 @@
 ### Spark
 ### Flink
 
-- [flink安装笔记](bigdata/flink安装笔记.md)
+- [flink入门实践](bigdata/flink入门实践.md)
 - [flink原理与实践5.1--笔记](./bigdata/Flink原理与实践5.1--笔记.md)
 
 ### Kafka

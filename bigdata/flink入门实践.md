@@ -1,3 +1,5 @@
+
+
 # Flink入门实践
 
 ## Flink是什么
@@ -6,9 +8,21 @@ Flink是一个分布式计算框架。
 
 Flink可以搭建廉价机群，快速处理任意规模的数据。
 
-![image-20220727132443861](D:/project/my_project/study/bigdata_lenrning/bigdata/flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727132443861.png)
+![image-20220727132523189](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727132523189-16588995251971.png)
 
+![image-20220727132555429](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727132555429.png)
 
+#### flink基本组件
+
+Flink中提供了3个组件，包括DataSource、Transformation和DataSink。
+
+DataSource：数据源组件，主要用来接收数据，目前有readTextFile，socketTextStream，fromCollection以及一些第三方的Source
+
+Transformation：表示算子，主要用来对数据进行处理，如Map，FlatMap，Filter，Reduce，Aggregation等
+
+DataSink：输出组件，主要用来把计算结果输出到其他存储介质中，比如writeAstext以及Kafka，Redis，Elasticsearch等第三方Sink组件
+
+**Flink Job=DataSource+Transformation+DataSink**
 
 ## 安装
 
@@ -134,6 +148,7 @@ http://hadoop102:8081/#/overview
 #### standAloneHA模式
 
 借助于zookeeper实现高可用
+![image-20220727145749773](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727145749773.png)
 
 第一步：修改配置文件
 
@@ -210,6 +225,8 @@ http://hadoop103:8081/#/overview
 ### flink on yarn模式
 
 hdfs以及yarn服务正常启动
+
+![image-20220727141108283](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727141108283-16589022708892.png)
 
 #### 第一种模式：单个yarn session模式
 
@@ -322,7 +339,8 @@ $ bin/flink run ./examples/batch/WordCount.jar -input hdfs://hadoop102:8020/flin
 这种方式的好处是一个任务会对应一个job,即每提交一个作业会根据自身的情况，向yarn申请资源，直到作业执行完成，并不会影响下一个作业的正常运行，除非是yarn上面没有任何资源的情况下。
 注意：client端必须要设置YARN_CONF_DIR或者HADOOP_CONF_DIR或者HADOOP_HOME环境变量，通过这个环境变量来读取YARN和HDFS的配置信息，否则启动会失败
 不需要在yarn当中启动任何集群，直接提交任务即可
-第一步：直接执行命令提交任务
+
+![image-20220727141645584](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727141645584-16589026075373.png)第一步：直接执行命令提交任务
 
 ```shell
 $ cd /opt/module/flink-1.8.1/
@@ -338,7 +356,45 @@ $ cd /opt/module/flink-1.8.1/
 $ bin/flink run --help
 ```
 
-### IDEA配置
+#### yarn-session.sh命令分析
+
+- 必选参数
+
+```shell
+-n <arg> 表示分配容器的数量(TaskManager) 
+```
+
+- 可选参数
+
+```shell
+-D 	<property=value> 动态属性
+-d,--detached                   独立运行  
+-jm,--jobManagerMemory <arg>    JobManager的内存 [in MB]  
+-nm,--name                      在YARN上为一个自定义的应用设置一个名字  
+-q,--query                      显示yarn中可用的资源 (内存, cpu核数)  
+-qu,--queue <arg>               指定YARN队列.  
+-s,--slots <arg>                每个TaskManager使用的slots数量  
+-tm,--taskManagerMemory <arg>   每个TaskManager的内存 [in MB]  
+-z,--zookeeperNamespace <arg>   针对HA模式在zookeeper上创建NameSpace 
+-id,--applicationId <yarnAppId> YARN集群上的任务id，附着到一个后台运行的yarn session中
+```
+
+#### flink run命令分析
+
+```shell
+$ flink run [OPTIONS] <jar-file> <arguments>  
+```
+
+```shell
+[OPTIONS]:
+-c,--class <classname>  如果没有在jar包中指定入口类，则需要在这里通过这个参数指定  
+-m,--jobmanager <host:port>  指定需要连接的jobmanager(主节点)地址，使用这个参数可以指定一个不同于配置文件中的jobmanager  
+-p,--parallelism <parallelism>   指定程序的并行度。可以覆盖配置文件中的默认值
+```
+
+启动一个新的yarn-session,它们都有一个y的前缀
+
+## IDEA配置
 
 第一步：创建一个maven工程
 
@@ -402,7 +458,148 @@ $ bin/flink run --help
 
 可选：将java文件夹重构为scala文件夹
 
-## flink wordcount
+### flink开发步骤
+
+1. 获得一个执行环境
+2. 加载/创建初始化数据
+3. 指定操作数据的transaction算子
+4. 指定计算好的数据的存放位置
+5. 调用execute()触发执行程序
+
+### flink wordcount
 
 code：[com.code.wordcount.StreamWordCount](../src/scala/com/code/wordcount/StreamWordCount.scala)
+
+### 案例开发1
+
+需求：实现每隔1s对最近2s内的数据进行汇总计算。
+
+分析：通过Socket模拟产生单词，使用Flink程序对数据进行汇总计算。
+
+code：[com.code.example01.Example01](../src/scala/com/code/example01/Example01.scala)
+
+## Flink 常用API 详解
+
+![image-20220727150017717](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727150017717-16589052202074.png)
+
+### Flink DataStream的常用API
+
+DataStream API主要分为3块：DataSource、Transformation、Sink
+
+DataSource可以通过StreamExecutionEnvironment.addSource(sourceFunction)为程序添加一个数据源
+
+#### DataSource
+
+1. 基于文件
+
+   ```scala
+   readtextFile(path)
+   ```
+
+2. 基于Socket
+
+   ```scala
+   socketTextStream(host,port)
+   ```
+
+3. 基于集合
+
+   ```scala
+   fromCollection(Collection)
+   ```
+
+4. 自定义输入
+
+   Flink提供了一批内置的Connector，连接器会提供对应的Source支持
+
+   ![image-20220727150631229](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727150631229-16589055926115.png)
+
+   ![image-20220727150725760](flink%E5%85%A5%E9%97%A8%E5%AE%9E%E8%B7%B5.assets/image-20220727150725760-16589056534666.png)
+
+   也可以通过自定义数据源，有两种方式实现
+
+   通过实现SourceFunction接口实现自定义并行度为1的数据源
+
+​		通过实现ParallelSourceFunction接口或者继承RichParallelSourceFunction来自定义有并行度的数据源
+
+#### 案例开发2.1
+
+需求：实现并行度只能为1的自定义DataSource以及SourceFunction接口。
+
+分析：模拟产生从1开始的递增数字，每次递增加1。
+
+code：[com.code.example02.ExampleSource](../src/scala/com/code/example02/ExampleSource.scala)
+
+需求：实现支持多并行度的自定义DataSource以及ParallelSourceFunction接口。
+
+分析：模拟产生从1开始的递增数字，每次递增加1。
+
+code：[com.code.example02.ExampleParallelSource](../src/scala/com/code/example02/ExampleParallelSource.scala)
+
+需求：实现支持多并行度的自定义DataSource，继承RichParallelSourceFunction类。
+
+分析：模拟产生从1开始的递增数字，每次递增加1。
+
+code：[com.code.example02.ExampleRichParallelSource](../src/scala/com/code/example02/ExampleRichParallelSource.scala)
+
+#### Transformation
+
+- map
+- flatMap：输入一个元素，可以返回0个，1个或者多个元素
+- filter
+- keyBy：根据指定的key分组，key相同的数据会进入一个分区
+- reduce
+- aggregations：sum()，min()，max()等
+- union：合并多个流，新的流会包含所有流的数数据，但是合并的流类型必须一致
+- connect：只能连接两个流，但是数据类型不限，会对两个流中的数据应用不同的处理方法
+- coMap和coFlatMap：在ConnectedStream中使用的，类似map和flatMap
+- split：根据规则将一个流切分成多个流
+- select：和split配合，选择切分后的流
+
+数据分区规则
+
+随机分区：
+
+```scala
+DataStream.shuffle()
+```
+
+Rebalancing，数据再均衡，重分区，消除数据倾斜
+
+```scala
+DataStream.rebalance()
+```
+
+Rescaling，重新调节
+
+如果上游操作有2个并发，而下游操作有4个并发，那么上游的1个并发结果分配给了下游的2个并发操作，另外的1个并发结果则分配给了下游的另外2个并发操作。另一方面，下游有2个并发操作而上游有4个并发操作，那么上游的其中2个操作的结果分配给了下游的一个并发操作，而另外2个并发操作的结果则分配给了另外1个并发操作。
+
+Rescaling与Rebalancing的区别为Rebalancing会产生全量重分区，而Rescaling不会。
+
+```scala
+DataStream.rescale()
+```
+
+自定义分区
+
+```scala
+DataStream.partitionCustom(partitioner,"key")
+DataStream.partitionCustom(partitioner,0)
+```
+
+#### 案例开发2.2
+
+需求：创建自定义的分区规则，根据数字的奇偶性来分区。
+
+code：
+
+[com.code.example02.ExamplePartitioner](../src/scala/com/code/example02/ExamplePartitioner.scala)
+
+[com.code.example02.Example02](../src/scala/com/code/example02/Example02.scala)
+
+
+
+
+
+
 
