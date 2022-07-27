@@ -27,7 +27,7 @@
 ### Spark
 ### Flink
 
-- [flink入门实践](./bigdata/flink入门实践.md)
+- [flink安装笔记](bigdata/flink安装笔记.md)
 - [flink原理与实践5.1--笔记](./bigdata/Flink原理与实践5.1--笔记.md)
 
 ### Kafka
@@ -43,3 +43,8 @@
 ### Oozie
 ### Azkaban
 ### Zookeeper
+
+
+参考资料：
+- 深入理解Java虚拟机：JVM高级特性与最佳实践（第3版） 周志明　著
+- flink原理与实践 鲁蔚征
