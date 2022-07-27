@@ -1,7 +1,10 @@
 # 大数据之路
 ## 编程语言
 ### Java
+
 - [java虚拟机](./java/JVM虚拟机.md) 
+- [Maven](./java/Maven.md)
+
 ### Scala
 
 ## 数据结构
