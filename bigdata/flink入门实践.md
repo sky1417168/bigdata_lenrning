@@ -597,9 +597,243 @@ code：
 
 [com.code.example02.Example02](../src/scala/com/code/example02/Example02.scala)
 
+#### Sink
 
+Flink针对DataStream提供了大量的已经实现的数据目的地（Sink）
 
+writeAstext()：将元素以字符串形式逐行写入，这些字符串通过调用每个元素的toString()方式来获取
 
+print()/printToErr()：打印每个元素的toString()方法不对值到标准输出或者标准错误输出流
+
+自定义输出：addSink可以吧实现数据输出到第三方存储介质中
+
+系统提供了一批内置的Connector
+
+- HDFS  Exactly-once
+- Elasticsearch At-least-once
+- Kafka Produce At-least-once/Exactly-once
+- Flie  At-least-once
+- Redis  At-least-once
+
+或者可以自定义Sink
+
+需要实现SInkFunction接口
+
+或者继承RichSinkFunction类
+
+实现省略咯....
+
+### Flink DataSet的常用API分析
+
+DataSet API主要可以分为3块来分析：DataSource、Transformation和Sink
+
+#### DataSource
+
+1. 基于文件
+
+   ```scala
+   readtextFile(path)
+   ```
+
+2. 基于集合
+
+   ```scala
+   fromCollection(Collection)
+   ```
+
+#### Transformation
+
+- map
+- flatMap
+- mapPartition
+- filter
+- reduce
+- aggregations
+- distinct
+- join
+- outerJoin 外联结
+- cross 笛卡儿积
+- union
+- first-n 前n个元素
+- sortPartition 分区排序
+- rebalance 再平衡
+- artitionByHash根据key的hash值充分区
+- partitionByRange()
+- partitionCustom(partitioner, "key")
+
+#### Sink
+
+- writeAsText()
+- writeAsCsv()
+
+### Flink Table API 和SQL的分析
+
+Flink针对标准的流处理和批处理提供了两种关系型API：Table API和SQL。
+
+Table API允许用户以一种很直观的方式进行select、filter和join操作；
+
+Flink SQL支持基于 Apache Calcite实现的标准SQL。
+
+针对批处理和流处理可以提供相同的处理语义和结果。
+
+Table API和SQL是关系型API，用户可以像操作MySQL数据库表一样来操作数据，而不需要通过编写Java代码来完成Flink Function，更不需要手工为Java代码调优。
+
+另外，SQL作为一个非程序员可操作的语言，学习成本很低，如果一个系统提供SQL支持，将很容易被用户接受。
+
+Flink的Table API和SQL是捆绑在Flink-Table依赖中的，因此如果项目中想要使用Table API和SQL，就必须要添加下面依赖
+
+```xml
+<dependency>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-table_2.12</artifactId>
+    <version>1.7.1</version>
+</dependency>
+```
+
+针对Flink的Scala操作，还需要添加对应的依赖。其中，针对Scala的批处理操作要添加如下依赖。
+
+```xml
+<dependency>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-streaming-scala_2.12</artifactId>
+    <version>1.10.1</version>
+</dependency>
+```
+
+#### Table API和SQL的基本使用
+
+想使用Table API和SQL，首先要创建一个TableEnvironment。
+
+TableEnvironment对象是Table API和SQL集成的核心，通过TableEnvironment可以实现以下功能。
+
+- 通过内部目录创建表
+- 通过外部目录创建表
+- 执行SQL查询
+- 注册一个用户自定义的Function
+- 把DataStram或者DataSet转换成Table
+- 持有ExecutionEnvironment或者StreamExecutionEnvironment的引用
+
+一个查询中只能绑定一个指定的TableEnvironment，TableEnvironment可以通过Table Environment.getTableEnvironment()或者TableConfig来生成。
+
+TableConfig可以用来配置TableEnvironment或者自定义查询优化。
+
+创建一个TableEnvironment对象
+
+```scala
+// 流数据查询
+val sEnv = StreamExecutionEnvironment.getExecutionEnvironment
+val sTableEnv = TableEnvironment.getTableEnvironment(sEnv)
+// 批数据查询
+val bEnv = ExecutionEnvironment.getExecutionEnvironment
+val bTableEnv = TableEnvironment.getTableEnvironment(sEnv)
+```
+
+通过获取到的TableEnvironment对象可以创建Table对象，
+
+有两种类型的Table对象：输入Table(Input Table)和输出Table(Output Table)。
+
+输入Table可以给Table API和SQL提供查询数据，输出Table可以把Table API和SQL的查询结果发送到外部存储介质中。
+
+输入Table可以通过多种数据源注册。
+
+输出Table需要使用TableSink注册。
+
+通过TableSource注册一个Table:
+
+```scala
+val sEnv = StreamExecutionEnvironment.getExecutionEnvironment
+val sTableEnv = TableEnvironment.getTableEnvironment(sEnv)
+// 创建一个TableSource
+val csvSource = new CsvTableSource("path",...)
+// 注册一个TableSource
+sTableEnv.registerTableSource("csvTable",csvSource)
+```
+
+通过TableSink把数据写到外部存储介质中
+
+```scala
+val sEnv = StreamExecutionEnvironment.getExecutionEnvironment
+val sTableEnv = TableEnvironment.getTableEnvironment(sEnv)
+// 创建一个TableSink
+val csvSink = new CsvTableSink("path",...)
+// 自定义字段名称和类型
+val fieldNames = Array("a","b","c")
+val fieldTypes = Array(Types.INT, Types.STRING, Types.LONG)
+// 注册一个TableSink
+sTableEnv.registerTableSink("csvTable",fieldNames,fieldTypes,csvSink)
+```
+
+使用Table API && SQL
+
+```scala
+// 创建一个TableEnvironment对象，指定planner、处理模式(batch、streaming)
+TableEnvironment tableEnv = ...; 
+// 创建一个表
+tableEnv.connect(...).createTemporaryTable("table1");
+// 注册一个外部的表
+tableEnv.connect(...).createTemporaryTable("outputTable");
+// 通过Table API的查询创建一个Table 对象
+Table tapiResult = tableEnv.from("table1").select(...);
+// 通过SQL查询的查询创建一个Table 对象
+Table sqlResult  = tableEnv.sqlQuery("SELECT ... FROM table1 ... ");
+// 将结果写入TableSink
+tapiResult.insertInto("outputTable");
+// 执行
+tableEnv.execute("java_job");
+```
+
+DataStream、DataSet和Table之间的转换
+
+#### 案例开发3
+
+需求：读取CSV文件中的内容，打印到控制台上。
+
+CSV文件内容如下：
+
+zs,15
+
+ww,18
+
+ls,20
+
+code：
+
+需求：读取student.txt文件中的单词并对其进行统计，计算每个单词出现的总次数，并把结果写入到result.csv文件中。
+
+student.txt文件内容如下：
+
+zs,18
+
+ls,20
+
+ww,30
+
+code：
+
+### Flink 支持的DataType
+
+- Java Tuple
+- Scala Case Class
+- Java POJO
+- PrimitiveType：Java 和 Scala 的基本数据类型
+- General Class Type：Java 和 Scala Class
+- Hadoop Writable：支持Hadoop实现的Writable数据类型
+- Special Type：如Scala中的Either Option Try
+
+### Flink 序列化分析
+
+Flink自带针对标准类型的序列化器
+
+如果Flink无法序列化，则交给Avro 和 Kryo
+
+使用方法如下
+
+```scala
+env.getConfig.enableForceAvro()
+env.getConfig.enableForceKryo()
+// 自定义序列化
+env.getConfig.addDefaultKryoSerializer(自定义的序列化器)
+```
 
 
 
