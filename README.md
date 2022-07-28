@@ -3,7 +3,8 @@
 ### Java
 
 - [java虚拟机](./java/JVM虚拟机.md) 
-- [Maven](./java/Maven.md)
+- [Maven基础](java/Maven基础.md)
+- [log4j基础](./java/log4j基础.md)
 
 ### Scala
 
