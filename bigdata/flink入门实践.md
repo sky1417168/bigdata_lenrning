@@ -796,7 +796,7 @@ ww,18
 
 ls,20
 
-code：
+code：[com.code.example03.Example03Csv](../src/scala/com/code/example03/Example03Csv.scala)
 
 需求：读取student.txt文件中的单词并对其进行统计，计算每个单词出现的总次数，并把结果写入到result.csv文件中。
 
@@ -808,7 +808,7 @@ ls,20
 
 ww,30
 
-code：
+code：[com.code.example03.Example03CsvFile](../src/scala/com/code/example03/Example03CsvFile.scala)
 
 ### Flink 支持的DataType
 
