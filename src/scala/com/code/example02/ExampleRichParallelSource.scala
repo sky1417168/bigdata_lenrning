@@ -17,9 +17,8 @@ class ExampleRichParallelSource extends RichParallelSourceFunction[Long]{
     }
   }
 
-  override def cancel(): Unit = {
-    is_Running = false
-  }
+  override def cancel(): Unit = is_Running = false
+
 
   override def open(parameters: Configuration): Unit = super.open(parameters)
 
