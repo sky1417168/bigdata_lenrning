@@ -192,7 +192,7 @@ object FlinkTest {
 
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf)
 
-    val text: DataStream[String] = env.socketTextStream("sys-test-04",6666)
+    val text: DataStream[String] = env.socketTextStream("sys-test.sql-04",6666)
 
     val wordCount: DataStream[(String, Int)] = text.flatMap(_.split("[ ,:]")).map((_,1)).keyBy(_._1).sum(1)
     wordCount.print()
@@ -205,7 +205,7 @@ object FlinkTest {
 - 读取数据源
 
 ```scala
-val text: DataStream[String] = env.socketTextStream("sys-test-04",6666)
+val text: DataStream[String] = env.socketTextStream("sys-test.sql-04",6666)
 val consumer: DataStream[String] = env.addSource(consumer)
 ```
 
