@@ -344,7 +344,19 @@ $ bin/flink run ./examples/batch/WordCount.jar -input hdfs://hadoop102:8020/flin
 
 ```shell
 $ cd /opt/module/flink-1.8.1/
-$ bin/flink run -m yarn-cluster -yn 2 -yjm 1024 -ytm 1024 ./examples/batch/WordCount.jar -input hdfs://hadoop102:8020/flink_input -output hdfs://hadoop102:8020/out_result/out_count.txt
+$  ./bin/flink run \
+-t -d yarn-per-job \
+-Dyarn.application.name=consumerDemo \
+-Dparallelism.default=3 \
+-Djobmanager.memory.process.size=2048mb \
+-Dtaskmanager.memory.process.size=2048mb \
+-Dtaskmanager.numberOfTaskSlots=2 \
+-Denv.java.opts="-Dfile.encoding=UTF-8" \
+-Drest.flamegraph.enabled=true \
+./examples/streaming/SocketWindowWordCount.jar \
+--hostname hadoop103 \
+--port 7777
+
 ```
 
 第二步：查看输出结果
